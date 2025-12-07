@@ -92,15 +92,18 @@ def main():
         try:
             data = json.dumps(payload).encode('utf-8')
             req = request.Request(API_ENDPOINT, data=data, headers={'Content-Type': 'application/json'})
-            with request.urlopen(req, timeout=30) as response:
-                if response.status == 200:
-                    logging.info(f"API approval received for job {job_id}. Releasing to printer.")
-                else:
-                    response_text = response.read().decode('utf-8', 'ignore')
-                    logging.error(f"API call failed with status {response.status}. Job will not be printed.")
-                    logging.error(f"Response: {response_text}")
-                    cancel_job()
+            with request.urlopen(req, timeout=30):
+                # If we get here, urlopen was successful and didn't raise HTTPError.
+                # This implies a 2xx or 3xx response (which is followed).
+                logging.info(f"API approval received for job {job_id}. Releasing to printer.")
+        except error.HTTPError as e:
+            # This handles 4xx and 5xx responses.
+            response_text = e.read().decode('utf-8', 'ignore')
+            logging.error(f"API call failed with status {e.code}. Job will not be printed.")
+            logging.error(f"Response: {response_text}")
+            cancel_job()
         except error.URLError as e:
+            # This handles other network errors (DNS, timeout, connection refused).
             logging.error(f"API request failed: {e}")
             retry_job()
 
