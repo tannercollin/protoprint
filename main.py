@@ -56,22 +56,25 @@ def main():
         'copies': copies,
     }
 
-    log_info(f"Processing job {job_id} for user {user}. Notifying API.")
-
-    try:
-        response = requests.post(API_ENDPOINT, json=payload, timeout=30)
-    except requests.exceptions.RequestException as e:
-        log_error(f"API request failed: {e}")
-        # Exit 1 tells CUPS to retry the job later.
-        sys.exit(1)
-
-    if response.status_code == 200:
-        log_info(f"API approval received for job {job_id}. Releasing to printer.")
+    if not API_ENDPOINT:
+        log_info("API_ENDPOINT is not set. Skipping API call and releasing job directly.")
     else:
-        log_error(f"API call failed with status {response.status_code}. Job will not be printed.")
-        log_error(f"Response: {response.text}")
-        # Exit 1 tells CUPS to retry the job later.
-        sys.exit(1)
+        log_info(f"Processing job {job_id} for user {user}. Notifying API.")
+
+        try:
+            response = requests.post(API_ENDPOINT, json=payload, timeout=30)
+        except requests.exceptions.RequestException as e:
+            log_error(f"API request failed: {e}")
+            # Exit 1 tells CUPS to retry the job later.
+            sys.exit(1)
+
+        if response.status_code == 200:
+            log_info(f"API approval received for job {job_id}. Releasing to printer.")
+        else:
+            log_error(f"API call failed with status {response.status_code}. Job will not be printed.")
+            log_error(f"Response: {response.text}")
+            # Exit 1 tells CUPS to retry the job later.
+            sys.exit(1)
 
     # API call was successful, now release the job to the real printer.
     try:

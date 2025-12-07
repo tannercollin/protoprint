@@ -46,6 +46,12 @@ This is useful for print accounting, policy enforcement, or "follow-me" printing
     API_ENDPOINT = "https://your-api.example.com/print-hook"
     ```
 
+    To disable the API check and always allow printing (e.g., for testing), you can set `API_ENDPOINT` to an empty string:
+
+    ```python
+    API_ENDPOINT = ""
+    ```
+
 4.  **Restart CUPS:**
 
     For CUPS to recognize the new backend, you must restart it.
