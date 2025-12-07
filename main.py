@@ -21,16 +21,19 @@ API_ENDPOINT = "https://api.spaceport.dns.t0.vc/protocoin/cups_printer_report/"
 
 def approve_job():
     """Instructs CUPS that the job is successful."""
+    logging.info('Approving job, returning 0.')
     sys.exit(0)
 
 
 def retry_job():
     """Instructs CUPS to retry the job later."""
+    logging.info('Retrying job, returning 1.')
     sys.exit(1)
 
 
 def cancel_job():
     """Instructs CUPS to cancel the job."""
+    logging.info('Cancelling job, returning 4.')
     sys.exit(4)
 
 
