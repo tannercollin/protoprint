@@ -16,7 +16,7 @@ import tempfile
 
 # The API endpoint to notify about a new print job.
 # This server should return a 200 OK status to allow the print job.
-API_ENDPOINT = ""
+API_ENDPOINT = "https://api.spaceport.dns.t0.vc/protocoin/cups_printer_report/"
 
 
 def approve_job():
