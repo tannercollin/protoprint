@@ -2,7 +2,8 @@
 
 import sys
 import os
-import requests
+import json
+from urllib import request, error
 import subprocess
 import tempfile
 
@@ -62,17 +63,19 @@ def main():
         log_info(f"Processing job {job_id} for user {user}. Notifying API.")
 
         try:
-            response = requests.post(API_ENDPOINT, json=payload, timeout=30)
-        except requests.exceptions.RequestException as e:
+            data = json.dumps(payload).encode('utf-8')
+            req = request.Request(API_ENDPOINT, data=data, headers={'Content-Type': 'application/json'})
+            with request.urlopen(req, timeout=30) as response:
+                if response.status == 200:
+                    log_info(f"API approval received for job {job_id}. Releasing to printer.")
+                else:
+                    response_text = response.read().decode('utf-8', 'ignore')
+                    log_error(f"API call failed with status {response.status}. Job will not be printed.")
+                    log_error(f"Response: {response_text}")
+                    # Exit 1 tells CUPS to retry the job later.
+                    sys.exit(1)
+        except error.URLError as e:
             log_error(f"API request failed: {e}")
-            # Exit 1 tells CUPS to retry the job later.
-            sys.exit(1)
-
-        if response.status_code == 200:
-            log_info(f"API approval received for job {job_id}. Releasing to printer.")
-        else:
-            log_error(f"API call failed with status {response.status_code}. Job will not be printed.")
-            log_error(f"Response: {response.text}")
             # Exit 1 tells CUPS to retry the job later.
             sys.exit(1)
 

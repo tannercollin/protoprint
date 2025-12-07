@@ -15,19 +15,10 @@ This is useful for print accounting, policy enforcement, or "follow-me" printing
 
 - A running CUPS server on a Linux machine.
 - Python 3.6+
-- `pip` for installing Python packages.
 
 ## Installation
 
-1.  **Install Python dependencies:**
-
-    This script requires the `requests` library to make HTTP calls.
-
-    ```bash
-    pip3 install requests
-    ```
-
-2.  **Install the backend script:**
+1.  **Install the backend script:**
 
     The script (`main.py`) needs to be copied into the CUPS backend directory and made executable. We'll name it `printmanager`.
 
@@ -38,7 +29,7 @@ This is useful for print accounting, policy enforcement, or "follow-me" printing
     ```
     *Note: The CUPS backend directory might vary. On some systems it could be `/usr/local/lib/cups/backend/`.*
 
-3.  **Configure the script:**
+2.  **Configure the script:**
 
     Open `/usr/lib/cups/backend/printmanager` with a text editor and change the `API_ENDPOINT` variable to point to your server.
 
@@ -52,7 +43,7 @@ This is useful for print accounting, policy enforcement, or "follow-me" printing
     API_ENDPOINT = ""
     ```
 
-4.  **Restart CUPS:**
+3.  **Restart CUPS:**
 
     For CUPS to recognize the new backend, you must restart it.
 
