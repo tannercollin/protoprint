@@ -3,7 +3,7 @@
 import logging
 DEBUG = False
 logging.basicConfig(
-        filename='/var/log/cups/protoprint', encoding='utf-8',
+        filename='/tmp/protoprint.log', encoding='utf-8',
         format='[%(asctime)s] %(levelname)s %(funcName)s - %(message)s',
         level=logging.DEBUG if DEBUG else logging.INFO)
 
