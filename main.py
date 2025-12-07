@@ -35,6 +35,15 @@ def main():
     options = sys.argv[5]
     job_file = sys.argv[6] if len(sys.argv) == 7 else None
 
+    logging.info(
+        f"New print job received:\n"
+        f"  Job ID:  {job_id}\n"
+        f"  User:    {user}\n"
+        f"  Title:   {title}\n"
+        f"  Copies:  {copies}\n"
+        f"  Options: {options}"
+    )
+
     # The device URI for this backend must be in the format:
     # printmanager:/<real_backend_uri>
     # e.g., printmanager:socket://192.168.1.123:9100
