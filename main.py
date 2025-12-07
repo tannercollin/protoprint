@@ -3,8 +3,8 @@
 import logging
 DEBUG = False
 logging.basicConfig(
-        filename='', encoding='utf-8',
-        format='[%(asctime)s] %(levelname)s %(module)s/%(funcName)s - %(message)s',
+        filename='/var/log/cups/protoprint', encoding='utf-8',
+        format='[%(asctime)s] %(levelname)s %(funcName)s - %(message)s',
         level=logging.DEBUG if DEBUG else logging.INFO)
 
 import sys
@@ -18,13 +18,6 @@ import tempfile
 # This server should return a 200 OK status to allow the print job.
 API_ENDPOINT = ""
 
-def log_error(message):
-    """Logs an error message to stderr."""
-    sys.stderr.write(f"ERROR: {message}\n")
-
-def log_info(message):
-    """Logs an info message to stderr."""
-    sys.stderr.write(f"INFO: {message}\n")
 
 def main():
     """
@@ -47,12 +40,12 @@ def main():
     # e.g., printmanager:socket://192.168.1.123:9100
     device_uri = os.environ.get("DEVICE_URI")
     if not device_uri or not device_uri.startswith("printmanager:"):
-        log_error("Invalid DEVICE_URI. Expected 'printmanager:/<real_uri>'.")
+        logging.error("Invalid DEVICE_URI. Expected 'printmanager:/<real_uri>'.")
         sys.exit(1)
 
     real_printer_uri = device_uri[len("printmanager:"):]
     if not real_printer_uri:
-        log_error("Real printer URI is missing from DEVICE_URI.")
+        logging.error("Real printer URI is missing from DEVICE_URI.")
         sys.exit(1)
 
     # Prepare data for the API POST request
@@ -65,24 +58,24 @@ def main():
     }
 
     if not API_ENDPOINT:
-        log_info("API_ENDPOINT is not set. Skipping API call and releasing job directly.")
+        logging.info("API_ENDPOINT is not set. Skipping API call and releasing job directly.")
     else:
-        log_info(f"Processing job {job_id} for user {user}. Notifying API.")
+        logging.info(f"Processing job {job_id} for user {user}. Notifying API.")
 
         try:
             data = json.dumps(payload).encode('utf-8')
             req = request.Request(API_ENDPOINT, data=data, headers={'Content-Type': 'application/json'})
             with request.urlopen(req, timeout=30) as response:
                 if response.status == 200:
-                    log_info(f"API approval received for job {job_id}. Releasing to printer.")
+                    logging.info(f"API approval received for job {job_id}. Releasing to printer.")
                 else:
                     response_text = response.read().decode('utf-8', 'ignore')
-                    log_error(f"API call failed with status {response.status}. Job will not be printed.")
-                    log_error(f"Response: {response_text}")
+                    logging.error(f"API call failed with status {response.status}. Job will not be printed.")
+                    logging.error(f"Response: {response_text}")
                     # Exit 1 tells CUPS to retry the job later.
                     sys.exit(1)
         except error.URLError as e:
-            log_error(f"API request failed: {e}")
+            logging.error(f"API request failed: {e}")
             # Exit 1 tells CUPS to retry the job later.
             sys.exit(1)
 
@@ -90,12 +83,12 @@ def main():
     try:
         scheme = real_printer_uri.split(':', 1)[0]
     except IndexError:
-        log_error(f"Could not determine scheme from real printer URI: {real_printer_uri}")
+        logging.error(f"Could not determine scheme from real printer URI: {real_printer_uri}")
         sys.exit(1)
 
     backend_path = f"/usr/lib/cups/backend/{scheme}"
     if not os.path.exists(backend_path) or not os.access(backend_path, os.X_OK):
-        log_error(f"CUPS backend for scheme '{scheme}' not found or not executable at {backend_path}.")
+        logging.error(f"CUPS backend for scheme '{scheme}' not found or not executable at {backend_path}.")
         sys.exit(1)
 
     # The print job data is on stdin if no file is given.
@@ -117,11 +110,11 @@ def main():
         # Execute the real backend to perform the printing
         result = subprocess.run(backend_args, env=backend_env, check=False)
         if result.returncode == 0:
-            log_info(f"Job {job_id} successfully sent to printer.")
+            logging.info(f"Job {job_id} successfully sent to printer.")
             # Exit 0 for success
             sys.exit(0)
         else:
-            log_error(f"Real backend '{scheme}' failed with exit code {result.returncode}.")
+            logging.error(f"Real backend '{scheme}' failed with exit code {result.returncode}.")
             # Exit 1 for failure
             sys.exit(1)
     finally:
