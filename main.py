@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+import logging
+DEBUG = False
+logging.basicConfig(
+        filename='', encoding='utf-8',
+        format='[%(asctime)s] %(levelname)s %(module)s/%(funcName)s - %(message)s',
+        level=logging.DEBUG if DEBUG else logging.INFO)
+
 import sys
 import os
 import json
@@ -9,7 +16,7 @@ import tempfile
 
 # The API endpoint to notify about a new print job.
 # This server should return a 200 OK status to allow the print job.
-API_ENDPOINT = "https://example.com/print-job-hook"
+API_ENDPOINT = ""
 
 def log_error(message):
     """Logs an error message to stderr."""
