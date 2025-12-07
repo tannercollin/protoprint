@@ -19,6 +19,21 @@ import tempfile
 API_ENDPOINT = ""
 
 
+def approve_job():
+    """Instructs CUPS that the job is successful."""
+    sys.exit(0)
+
+
+def retry_job():
+    """Instructs CUPS to retry the job later."""
+    sys.exit(1)
+
+
+def cancel_job():
+    """Instructs CUPS to cancel the job."""
+    sys.exit(4)
+
+
 def main():
     """
     CUPS backend script to control print job release via an API call.
@@ -26,7 +41,7 @@ def main():
     # CUPS calls backends with 0 args for discovery, or 5/6 for a print job.
     # We only care about print jobs.
     if len(sys.argv) < 6:
-        sys.exit(0)
+        approve_job()
 
     job_id = sys.argv[1]
     user = sys.argv[2]
@@ -50,12 +65,12 @@ def main():
     device_uri = os.environ.get("DEVICE_URI")
     if not device_uri or not device_uri.startswith("printmanager:"):
         logging.error("Invalid DEVICE_URI. Expected 'printmanager:/<real_uri>'.")
-        sys.exit(1)
+        retry_job()
 
     real_printer_uri = device_uri[len("printmanager:"):]
     if not real_printer_uri:
         logging.error("Real printer URI is missing from DEVICE_URI.")
-        sys.exit(1)
+        retry_job()
 
     # Prepare data for the API POST request
     payload = {
@@ -81,24 +96,22 @@ def main():
                     response_text = response.read().decode('utf-8', 'ignore')
                     logging.error(f"API call failed with status {response.status}. Job will not be printed.")
                     logging.error(f"Response: {response_text}")
-                    # Exit 1 tells CUPS to retry the job later.
-                    sys.exit(1)
+                    cancel_job()
         except error.URLError as e:
             logging.error(f"API request failed: {e}")
-            # Exit 1 tells CUPS to retry the job later.
-            sys.exit(1)
+            retry_job()
 
     # API call was successful, now release the job to the real printer.
     try:
         scheme = real_printer_uri.split(':', 1)[0]
     except IndexError:
         logging.error(f"Could not determine scheme from real printer URI: {real_printer_uri}")
-        sys.exit(1)
+        retry_job()
 
     backend_path = f"/usr/lib/cups/backend/{scheme}"
     if not os.path.exists(backend_path) or not os.access(backend_path, os.X_OK):
         logging.error(f"CUPS backend for scheme '{scheme}' not found or not executable at {backend_path}.")
-        sys.exit(1)
+        retry_job()
 
     # The print job data is on stdin if no file is given.
     # We must pass it to the real backend.
@@ -120,12 +133,10 @@ def main():
         result = subprocess.run(backend_args, env=backend_env, check=False)
         if result.returncode == 0:
             logging.info(f"Job {job_id} successfully sent to printer.")
-            # Exit 0 for success
-            sys.exit(0)
+            approve_job()
         else:
             logging.error(f"Real backend '{scheme}' failed with exit code {result.returncode}.")
-            # Exit 1 for failure
-            sys.exit(1)
+            retry_job()
     finally:
         # Clean up the temporary file if we created one
         if temp_job_file:
